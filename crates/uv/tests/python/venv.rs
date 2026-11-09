@@ -1912,6 +1912,29 @@ fn verify_pyvenv_cfg_relocatable() {
     ));
 }
 
+/// Windows batch activation must preserve apostrophes in the environment path.
+#[cfg(windows)]
+#[test]
+fn activate_bat_preserves_apostrophes() {
+    let context = uv_test::test_context!("3.12");
+    let parent = context.temp_dir.child("it's a test");
+    parent.create_dir_all().unwrap();
+    let environment = parent.child(".venv");
+
+    context
+        .venv()
+        .arg(environment.as_os_str())
+        .arg("--python")
+        .arg("3.12")
+        .assert()
+        .success();
+
+    let activate_bat = environment.child("Scripts").child("activate.bat");
+    let contents = fs_err::read_to_string(activate_bat.path()).unwrap();
+    assert!(contents.contains("it's a test"));
+    assert!(!contents.contains("'\"'\"'"));
+}
+
 /// With `UV_VENV_RELOCATABLE=1`, the virtual environment is relocatable.
 #[test]
 fn verify_pyvenv_cfg_relocatable_env_var() {

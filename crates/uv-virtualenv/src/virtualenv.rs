@@ -504,6 +504,10 @@ pub(crate) fn create(
                 "'{}'",
                 escape_posix_for_single_quotes(location_string)
             )),
+            // The batch activator places the path inside a double-quoted `for` argument.
+            // POSIX single-quote escaping is not valid in `cmd.exe` and turns apostrophes
+            // in Windows paths into the literal `\'"'"'` sequence.
+            (false, "activate.bat") if cfg!(windows) => Cow::Borrowed(location_string),
             // Note: `activate.ps1` is already relocatable by default.
             _ => escape_posix_for_single_quotes(location_string),
         };
